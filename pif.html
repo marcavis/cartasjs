@@ -2,29 +2,43 @@
 <html>
 <head>
 <meta charset="utf-8"/>
+<style>
+button {
+	vertical-align: center;
+	text-align: center;
+} 
+</style>
 </head>
 <body>
-<h1>My First Web Page</h1>
-<p>My First Paragraph</p>
-<p id="demo"></p>
-<p id="demo2"></p>
+<h1>Pif da Caixa</h1>
+<table>
+	<tr>
+		<td id="monte"></td>
+		<td id="lixo">LIXO</td>
+	</tr>
+	<tr>
+		<td colspan="2" id="maoDoJogador"></td>
+	</tr>
+</table>
 <script>
-var simbolos = ["&clubs;", '<span style="color:red">&diams;</span>', "&spades;\n", '<span style="color:red">&hearts;</span>'];
-var cartas = [];
-for(i = 1; i <= 13; i++)
-{
-	for(j = 0; j <= 3; j++)
-	{
-		cartas.push({valor: i, naipe: j});
+"use strict";
+var simbolos = ['&clubs;', '&diams;', '&spades;', '&hearts;'];
+var monte = criarMonte();
+var lixo = [];
+atualizarTela(monte, lixo);
+var jogador = {nome: "Jogador", cartas: []};
+var oponente = {nome: "Computador", cartas: []};
+var jogadores = [jogador, oponente];
+
+for(var i = 0; i < 9; i++) {
+	for(var x in jogadores) {
+		jogadores[x].cartas.push(compra(monte));
 	}
 }
-embaralhar(cartas);
-var saida = "";
-for(i = 0; i <= 10; i++)
-{
-	saida += mostra(cartas[i]);
-}
-document.getElementById('demo2').innerHTML = saida;
+atualizarTela(monte, lixo);
+
+mostraMao(jogador);
+
 function mostra(carta)
 {
 	var nome;
@@ -45,7 +59,19 @@ function mostra(carta)
 		default:
 			nome = "" + carta.valor;
 	}
-	return nome + simbolos[carta.naipe];
+	if(carta.naipe % 2 == 0) {
+		return "<span>" + nome + " " + simbolos[carta.naipe] + "</span>";
+	} else {
+		return "<span style=\"color:red\">" + nome + " " + simbolos[carta.naipe] + "</span>";
+	}
+}
+
+function compra(baralho) {
+	var i_carta = aleatorio(0, baralho.length - 1);
+	var carta = baralho[i_carta];
+	baralho.splice(i_carta, 1);
+	
+	return carta;
 }
 
 function aleatorio(min, max)
@@ -53,9 +79,47 @@ function aleatorio(min, max)
 	return Math.floor(Math.random() * (max - min) ) + min;
 }
 
-function embaralhar(cartas)
-{
-	cartas.sort(function(a, b) { return 0.5 - Math.random()});
+function criarMonte() {
+	var monte = []
+	for(var i = 1; i <= 13; i++)
+	{
+		for(var j = 0; j <= 3; j++)
+		{
+			monte.push({valor: i, naipe: j});
+			//dois baralhos
+			monte.push({valor: i, naipe: j});
+		}
+	}
+	return monte;
+}
+
+function atualizarTela(monte, lixo) {
+	document.getElementById('monte').innerHTML = 
+	"<button ><h2>Monte: " + String(monte.length) + " cartas</h2></button>";
+	if(lixo.length > 0) {
+		document.getElementById('lixo').innerHTML = 
+		"<button ><h2>Lixo: " + String(lixo.length) + " cartas</h2></button>";
+	} else {
+		document.getElementById('lixo').innerHTML = 
+		"<button ><h2>Lixo: Vazio</h2></button>";
+	}
+}
+
+function mostraMao(jogador) {
+	var saida = "";
+	for(var i in jogador.cartas)
+	{
+		saida += '<button id="cartaJ'+ i + '" onclick="selecionaCarta(jogador, retornaCarta(this.id))" ><h2>'+mostra(jogador.cartas[i])+'</h2></button>';
+	}
+	document.getElementById('maoDoJogador').innerHTML = saida;
+}
+
+function retornaCarta(nomeDaCarta) {
+	return Number(nomeDaCarta.slice(-1));
+}
+
+function selecionaCarta(jogador, idCarta) {
+	console.log(jogador.cartas[idCarta]);
 }
 </script>
 </body>
