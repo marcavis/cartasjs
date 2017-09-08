@@ -6,7 +6,7 @@
 button {
 	vertical-align: center;
 	text-align: center;
-} 
+}
 </style>
 </head>
 <body>
@@ -26,8 +26,8 @@ var simbolos = ['&clubs;', '&diams;', '&spades;', '&hearts;'];
 var monte = criarMonte();
 var lixo = [];
 atualizarTela(monte, lixo);
-var jogador = {nome: "Jogador", cartas: []};
-var oponente = {nome: "Computador", cartas: []};
+var jogador = {nome: "Jogador", cartas: [], selecao: []};
+var oponente = {nome: "Computador", cartas: [], selecao: []};
 var jogadores = [jogador, oponente];
 
 for(var i = 0; i < 9; i++) {
@@ -70,7 +70,7 @@ function compra(baralho) {
 	var i_carta = aleatorio(0, baralho.length - 1);
 	var carta = baralho[i_carta];
 	baralho.splice(i_carta, 1);
-	
+
 	return carta;
 }
 
@@ -85,22 +85,22 @@ function criarMonte() {
 	{
 		for(var j = 0; j <= 3; j++)
 		{
-			monte.push({valor: i, naipe: j});
+			monte.push({valor: i, naipe: j, selecao: false});
 			//dois baralhos
-			monte.push({valor: i, naipe: j});
+			monte.push({valor: i, naipe: j, selecao: false});
 		}
 	}
 	return monte;
 }
 
 function atualizarTela(monte, lixo) {
-	document.getElementById('monte').innerHTML = 
+	document.getElementById('monte').innerHTML =
 	"<button ><h2>Monte: " + String(monte.length) + " cartas</h2></button>";
 	if(lixo.length > 0) {
-		document.getElementById('lixo').innerHTML = 
+		document.getElementById('lixo').innerHTML =
 		"<button ><h2>Lixo: " + String(lixo.length) + " cartas</h2></button>";
 	} else {
-		document.getElementById('lixo').innerHTML = 
+		document.getElementById('lixo').innerHTML =
 		"<button ><h2>Lixo: Vazio</h2></button>";
 	}
 }
@@ -109,17 +109,33 @@ function mostraMao(jogador) {
 	var saida = "";
 	for(var i in jogador.cartas)
 	{
-		saida += '<button id="cartaJ'+ i + '" onclick="selecionaCarta(jogador, retornaCarta(this.id))" ><h2>'+mostra(jogador.cartas[i])+'</h2></button>';
+		saida += '<button id="cartaJ'+ i + '" onclick="selecionaCarta(jogador, this.id)" ><h2>'+mostra(jogador.cartas[i])+'</h2></button>';
 	}
 	document.getElementById('maoDoJogador').innerHTML = saida;
 }
 
-function retornaCarta(nomeDaCarta) {
-	return Number(nomeDaCarta.slice(-1));
+
+function selecionaCarta(jogador, nomeDaCarta) {
+	var idCarta = Number(nomeDaCarta.slice(-1));
+
+	jogador.cartas[idCarta].selecao = jogador.cartas[idCarta].selecao ? false : true;
+	document.getElementById(nomeDaCarta).style.borderStyle =
+	document.getElementById(nomeDaCarta).style.borderStyle !== 'inset' ? 'inset' : 'outset';
+	var selecionadas = [];
+	for(var i in jogador.cartas) {
+		if(jogador.cartas[i].selecao)
+			selecionadas.push(jogador.cartas[i]);
+	}
+	if(selecionadas.length == 3)
+		testarJogo(selecionadas);
+	console.log(jogador.cartas[idCarta]);
+	console.log(selecionadas.length);
 }
 
-function selecionaCarta(jogador, idCarta) {
-	console.log(jogador.cartas[idCarta]);
+function testarJogo(cartas) {
+	console.log(cartas[0]);
+	console.log(cartas[1]);
+	console.log(cartas[2]);
 }
 </script>
 </body>
