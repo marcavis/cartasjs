@@ -18,6 +18,7 @@ button {
 	</tr>
 	<tr>
 		<td colspan="2" id="maoDoJogador"></td>
+		<td id="jogar"><button><h2>Baixar jogo</h2></button></td>
 	</tr>
 </table>
 <script>
@@ -59,7 +60,7 @@ function mostra(carta)
 		default:
 			nome = "" + carta.valor;
 	}
-	if(carta.naipe % 2 == 0) {
+	if(carta.naipe % 2 === 0) {
 		return "<span>" + nome + " " + simbolos[carta.naipe] + "</span>";
 	} else {
 		return "<span style=\"color:red\">" + nome + " " + simbolos[carta.naipe] + "</span>";
@@ -95,13 +96,13 @@ function criarMonte() {
 
 function atualizarTela(monte, lixo) {
 	document.getElementById('monte').innerHTML =
-	"<button ><h2>Monte: " + String(monte.length) + " cartas</h2></button>";
+	'<button><h2>Monte: ' + String(monte.length) + ' cartas</h2></button>';
 	if(lixo.length > 0) {
 		document.getElementById('lixo').innerHTML =
-		"<button ><h2>Lixo: " + String(lixo.length) + " cartas</h2></button>";
+		'<button><h2>Lixo: ' + String(lixo.length) + ' cartas</h2></button>';
 	} else {
 		document.getElementById('lixo').innerHTML =
-		"<button ><h2>Lixo: Vazio</h2></button>";
+		'<button><h2>Lixo: Vazio</h2></button>';
 	}
 }
 
@@ -109,7 +110,7 @@ function mostraMao(jogador) {
 	var saida = "";
 	for(var i in jogador.cartas)
 	{
-		saida += '<button id="cartaJ'+ i + '" onclick="selecionaCarta(jogador, this.id)" ><h2>'+mostra(jogador.cartas[i])+'</h2></button>';
+		saida += '<button id="cartaJ'+ i + '" onclick="selecionaCarta(jogador, this.id)" style="border-style: outset;" ><h2>'+mostra(jogador.cartas[i])+'</h2></button>';
 	}
 	document.getElementById('maoDoJogador').innerHTML = saida;
 }
@@ -126,16 +127,39 @@ function selecionaCarta(jogador, nomeDaCarta) {
 		if(jogador.cartas[i].selecao)
 			selecionadas.push(jogador.cartas[i]);
 	}
-	if(selecionadas.length == 3)
+	if(selecionadas.length === 3)
 		testarJogo(selecionadas);
-	console.log(jogador.cartas[idCarta]);
-	console.log(selecionadas.length);
+	//console.log(jogador.cartas[idCarta]);
+	//console.log(selecionadas.length);
 }
 
 function testarJogo(cartas) {
+	cartas.sort(function(a, b) {return a.valor - b.valor});
+	var c1 = cartas[0];
+	var c2 = cartas[1];
+	var c3 = cartas[2];
+	
+	var ehSeq = testarSequencia(c1, c2, c3);
+	var ehTrinca = testarTrinca(c1, c2, c3);
+	
+	
 	console.log(cartas[0]);
 	console.log(cartas[1]);
 	console.log(cartas[2]);
+}
+
+function testarSequencia(c1, c2, c3) {
+	if (c1.naipe === c2.naipe && c1.naipe === c3.naipe) {
+		return ((c2.valor === c1.valor + 1 && c3.valor === c1.valor + 2) ||
+		(c1.valor === 1 && c2.valor === 12 && c3.valor === 13));
+	} else {
+		return false;
+	}	
+}
+
+function testarTrinca(c1, c2, c3) {
+	return ((c1.valor == c2.valor && c1.valor == c3.valor) &&
+	(c1.naipe !== c2.naipe && c1.naipe !== c3.naipe && c2.naipe !== c3.naipe));
 }
 </script>
 </body>
