@@ -13,12 +13,13 @@ button {
 <h1>Pif da Caixa</h1>
 <table>
 	<tr>
-		<td id="monte"></td>
-		<td id="lixo">LIXO</td>
+		<td id="monte"><button id="btnMonte" onclick="compraPraMim(jogador, monte)"><h2>Monte: 104 cartas</h2></button></td>
+		<td id="lixo"><button id="btnLixo"><h2>Lixo: Vazio</h2></button></td>
+		<td id="descarte"><button id="btnDescarte" onclick="descartar(jogador, lixo)" disabled><h2>Descartar</h2></button></td>
 	</tr>
 	<tr>
 		<td colspan="2" id="maoDoJogador"></td>
-		<td id="jogar"><button><h2>Baixar jogo</h2></button></td>
+		<td id="jogar"><button id="btnBaixar" disabled><h2>Baixar jogo</h2></button></td>
 	</tr>
 </table>
 <script>
@@ -36,8 +37,10 @@ for(var i = 0; i < 9; i++) {
 		jogadores[x].cartas.push(compra(monte));
 	}
 }
-atualizarTela(monte, lixo);
 
+document.getElementById("btnMonte").disabled = false;
+document.getElementById("btnDescarte").disabled = true;
+atualizarTela(monte, lixo);
 mostraMao(jogador);
 
 function mostra(carta)
@@ -71,8 +74,32 @@ function compra(baralho) {
 	var i_carta = aleatorio(0, baralho.length - 1);
 	var carta = baralho[i_carta];
 	baralho.splice(i_carta, 1);
-
+	//TODO: tratar situação de quando acabar o baralho
 	return carta;
+}
+
+function compraPraMim(qualJogador, baralho) {
+	qualJogador.cartas.push(compra(monte));
+	atualizarTela(monte, lixo);
+	mostraMao(qualJogador);
+	document.getElementById("btnMonte").disabled = true;
+	document.getElementById("btnDescarte").disabled = false;
+}
+
+function descartar(qualJogador, lixo) {
+	var carta;
+	for(var i in jogador.cartas) {
+		//já garantimos que essa funcao apenas é usável quando
+		//apenas uma carta foi selecionada
+		if(jogador.cartas[i].selecao) {
+			carta = (jogador.cartas[i]);
+			jogador.cartas.splice(i, 1);
+			lixo.push(carta);
+		}
+	}
+	atualizarTela(monte, lixo);
+	mostraMao(qualJogador);
+	document.getElementById("btnDescarte").disabled = true;
 }
 
 function aleatorio(min, max)
@@ -95,14 +122,14 @@ function criarMonte() {
 }
 
 function atualizarTela(monte, lixo) {
-	document.getElementById('monte').innerHTML =
-	'<button><h2>Monte: ' + String(monte.length) + ' cartas</h2></button>';
+	document.getElementById('btnMonte').innerHTML =
+	'<h2>Monte: ' + String(monte.length) + ' cartas</h2>';
 	if(lixo.length > 0) {
-		document.getElementById('lixo').innerHTML =
-		'<button><h2>Lixo: ' + String(lixo.length) + ' cartas</h2></button>';
+		document.getElementById('btnLixo').innerHTML =
+		'<h2>Lixo: ' + mostra(lixo[lixo.length-1]) + ' + ' + (lixo.length-1) + ' cartas</h2>';
 	} else {
-		document.getElementById('lixo').innerHTML =
-		'<button><h2>Lixo: Vazio</h2></button>';
+		document.getElementById('btnLixo').innerHTML =
+		'<h2>Lixo: Vazio</h2>';
 	}
 }
 
@@ -117,6 +144,7 @@ function mostraMao(jogador) {
 
 
 function selecionaCarta(jogador, nomeDaCarta) {
+	document.getElementById("btnBaixar").disabled = true; 
 	var idCarta = Number(nomeDaCarta.slice(-1));
 
 	jogador.cartas[idCarta].selecao = jogador.cartas[idCarta].selecao ? false : true;
@@ -127,10 +155,24 @@ function selecionaCarta(jogador, nomeDaCarta) {
 		if(jogador.cartas[i].selecao)
 			selecionadas.push(jogador.cartas[i]);
 	}
-	if(selecionadas.length === 3)
+	if(selecionadas.length === 3) {
 		testarJogo(selecionadas);
-	//console.log(jogador.cartas[idCarta]);
-	//console.log(selecionadas.length);
+	}
+	var botaoDescarte = document.getElementById("btnDescarte");
+	if(selecionadas.length === 1) {
+		botaoDescarte.disabled = false;
+	} else {
+		botaoDescarte.disabled = true;
+	}
+}
+
+function cartasSelecionadas(jogador) {
+	var selecionadas = [];
+	for(var i in jogador.cartas) {
+		if(jogador.cartas[i].selecao)
+			selecionadas.push(jogador.cartas[i]);
+	}
+	return selecionadas;
 }
 
 function testarJogo(cartas) {
@@ -139,13 +181,21 @@ function testarJogo(cartas) {
 	var c2 = cartas[1];
 	var c3 = cartas[2];
 	
+	var ehTeste = testarAltas(c1,c2,c3);
 	var ehSeq = testarSequencia(c1, c2, c3);
+	//reordenar o jogo para o As ficar no lado correto
+	//tirar daqui, deve fazer isso apenas quando baixar o jogo
+	if(ehSeq && c1.valor === 1 && c3.valor === 13) {
+		cartas = [c2, c3, c1];
+	}
 	var ehTrinca = testarTrinca(c1, c2, c3);
-	
-	
-	console.log(cartas[0]);
-	console.log(cartas[1]);
-	console.log(cartas[2]);
+	if(ehSeq || ehTrinca || ehTeste) {
+		document.getElementById("btnBaixar").disabled = false; 
+	}
+}
+
+function testarAltas(c1, c2, c3) {
+	return (c1.valor > 10 && c2.valor > 10 && c3.valor > 10);
 }
 
 function testarSequencia(c1, c2, c3) {
