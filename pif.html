@@ -13,14 +13,27 @@ button {
 <h1>Pif da Caixa</h1>
 <table>
 	<tr>
+		<td colspan="3" id="mensagem"></td>
+	</tr>
+	<tr>
 		<td id="monte"><button id="btnMonte" onclick="compraPraMim(jogador, monte)"><h2>Monte: 104 cartas</h2></button></td>
-		<td id="lixo"><button id="btnLixo"><h2>Lixo: Vazio</h2></button></td>
+		<td id="lixo"><button id="btnLixo" onclick="compraPraMim(jogador, lixo)"><h2>Lixo: Vazio</h2></button></td>
 		<td id="descarte"><button id="btnDescarte" onclick="descartar(jogador, lixo)" disabled><h2>Descartar</h2></button></td>
 	</tr>
 	<tr>
 		<td colspan="2" id="maoDoJogador"></td>
-		<td id="jogar"><button id="btnBaixar" disabled><h2>Baixar jogo</h2></button></td>
+		<td id="jogar"><button id="btnBaixar" disabled onclick="baixar(jogador)"><h2>Baixar jogo</h2></button></td>
 	</tr>
+
+</table>
+
+</br></br>
+<table width = "50%">
+<tr>
+	<td id="jogo1">JOGO 1</br><button><h2>?</h2></button><button><h2>?</h2></button><button><h2>?</h2></button></td>
+	<td id="jogo2">JOGO 2</br><button><h2>?</h2></button><button><h2>?</h2></button><button><h2>?</h2></button></td>
+	<td id="jogo3">JOGO 3</br><button><h2>?</h2></button><button><h2>?</h2></button><button><h2>?</h2></button></td>
+</tr>
 </table>
 <script>
 "use strict";
@@ -28,8 +41,9 @@ var simbolos = ['&clubs;', '&diams;', '&spades;', '&hearts;'];
 var monte = criarMonte();
 var lixo = [];
 atualizarTela(monte, lixo);
-var jogador = {nome: "Jogador", cartas: [], selecao: []};
-var oponente = {nome: "Computador", cartas: [], selecao: []};
+var jogador = {nome: "Jogador", cartas: [], selecao: [], comprou: false, descartou: false, adversario: null};
+var oponente = {nome: "Computador", cartas: [], selecao: [], comprou: false, descartou: false, adversario: jogador};
+jogador.adversario = oponente;
 var jogadores = [jogador, oponente];
 
 for(var i = 0; i < 9; i++) {
@@ -38,10 +52,7 @@ for(var i = 0; i < 9; i++) {
 	}
 }
 
-document.getElementById("btnMonte").disabled = false;
-document.getElementById("btnDescarte").disabled = true;
-atualizarTela(monte, lixo);
-mostraMao(jogador);
+comecarRodada(jogador);
 
 function mostra(carta)
 {
@@ -74,32 +85,71 @@ function compra(baralho) {
 	var i_carta = aleatorio(0, baralho.length - 1);
 	var carta = baralho[i_carta];
 	baralho.splice(i_carta, 1);
-	//TODO: tratar situação de quando acabar o baralho
+	//TODO: tratar situacao de quando acabar o baralho
 	return carta;
 }
 
 function compraPraMim(qualJogador, baralho) {
-	qualJogador.cartas.push(compra(monte));
+	console.log(qualJogador, baralho);
+	document.getElementById("mensagem").innerHTML = '<span style="color:red"><h2>Se tiver algum jogo de 3 cartas que queira baixar, pode fazÃª-lo.</br>Se nÃ£o, pode descartar uma carta.</h2>';
+	qualJogador.cartas.push(compra(baralho));
 	atualizarTela(monte, lixo);
 	mostraMao(qualJogador);
+	qualJogador.comprou = true;
 	document.getElementById("btnMonte").disabled = true;
-	document.getElementById("btnDescarte").disabled = false;
+	document.getElementById("btnLixo").disabled = true;
 }
 
 function descartar(qualJogador, lixo) {
 	var carta;
-	for(var i in jogador.cartas) {
-		//já garantimos que essa funcao apenas é usável quando
+	for(var i in qualJogador.cartas) {
+		//jï¿½ garantimos que essa funcao apenas ï¿½ usï¿½vel quando
 		//apenas uma carta foi selecionada
-		if(jogador.cartas[i].selecao) {
-			carta = (jogador.cartas[i]);
-			jogador.cartas.splice(i, 1);
+		if(qualJogador.cartas[i].selecao) {
+			carta = (qualJogador.cartas[i]);
+			carta.selecao = false;
+			qualJogador.cartas.splice(i, 1);
 			lixo.push(carta);
 		}
 	}
 	atualizarTela(monte, lixo);
 	mostraMao(qualJogador);
+	qualJogador.descartou = true;
 	document.getElementById("btnDescarte").disabled = true;
+	terminarRodada(qualJogador);
+}
+
+function comecarRodada(qualJogador) {
+	atualizarTela(monte, lixo);
+	qualJogador.comprou = false;
+	qualJogador.descartou = false;
+	document.getElementById("btnMonte").disabled = false;
+	if(monte.length <= 0) {
+		alert("O lixo foi embaralhado para servir como novo monte!")
+		//nesse caso, pegar o lixo
+		console.log(monte.length);
+		monte = monte.concat(lixo.slice());
+		console.log(monte);
+		lixo = [];
+	}
+	if(lixo.length > 0) {
+		document.getElementById("btnLixo").disabled = false;
+	} else {
+		document.getElementById("btnLixo").disabled = true;
+	}
+	document.getElementById("btnDescarte").disabled = true;
+	if(qualJogador === jogador)
+		document.getElementById("mensagem").innerHTML = '<span style="color:red"><h2>Compre uma carta do monte ou do lixo.</br></h2>';
+
+	if(qualJogador === jogador)
+		mostraMao(jogador);
+}
+
+function terminarRodada(qualJogador) {
+	console.log("minha vez");
+	//outro joga aqui
+	//comecarRodada(qualJogador.adversario);
+	comecarRodada(qualJogador);
 }
 
 function aleatorio(min, max)
@@ -137,14 +187,15 @@ function mostraMao(jogador) {
 	var saida = "";
 	for(var i in jogador.cartas)
 	{
-		saida += '<button id="cartaJ'+ i + '" onclick="selecionaCarta(jogador, this.id)" style="border-style: outset;" ><h2>'+mostra(jogador.cartas[i])+'</h2></button>';
+		var estilo = jogador.cartas[i].selecao === false ? "outset" : "inset";
+		saida += '<button id="cartaJ'+ i + '" onclick="selecionaCarta(jogador, this.id)" style="border-style: ' + estilo + ';" ><h2>'+mostra(jogador.cartas[i])+'</h2></button>';
 	}
 	document.getElementById('maoDoJogador').innerHTML = saida;
 }
 
 
 function selecionaCarta(jogador, nomeDaCarta) {
-	document.getElementById("btnBaixar").disabled = true; 
+	document.getElementById("btnBaixar").disabled = true;
 	var idCarta = Number(nomeDaCarta.slice(-1));
 
 	jogador.cartas[idCarta].selecao = jogador.cartas[idCarta].selecao ? false : true;
@@ -159,11 +210,14 @@ function selecionaCarta(jogador, nomeDaCarta) {
 		testarJogo(selecionadas);
 	}
 	var botaoDescarte = document.getElementById("btnDescarte");
-	if(selecionadas.length === 1) {
+	console.log(jogador);
+	if(selecionadas.length === 1 && jogador.comprou === true) {
 		botaoDescarte.disabled = false;
 	} else {
 		botaoDescarte.disabled = true;
 	}
+	//for(var i in selecionadas)
+	//	console.log(selecionadas[i]);
 }
 
 function cartasSelecionadas(jogador) {
@@ -175,22 +229,46 @@ function cartasSelecionadas(jogador) {
 	return selecionadas;
 }
 
+function baixar(qualJogador) {
+	var cartas = cartasSelecionadas(qualJogador);
+	//reordenar o jogo para o As ficar no lado correto
+	//so acontece quando a sequencia eh de A, K, Q
+	if(cartas[0].valor === 1 && cartas[2].valor === 13) {
+		cartas = [cartas[1], cartas[2], cartas[0]];
+	}
+	var esteJogo = [];
+	for(var i in qualJogador.cartas) {
+		//ja garantimos que essa funcao apenas ï¿½ usï¿½vel quando
+		//apenas uma carta foi selecionada
+		if(qualJogador.cartas[i].selecao) {
+			var carta = qualJogador.cartas[i]
+			carta.selecao = false;
+			qualJogador.cartas.splice(i, 1);
+			esteJogo.push(carta);
+		}
+	}
+
+	if(qualJogador === jogador) {
+		var saida = 'JOGO 1</br>';
+		for(var i in esteJogo) {
+			saida += '<button><h2>'+mostra(esteJogo[i])+'</h2></button>';
+		}
+		document.getElementById("jogo1").innerHTML = saida;
+	}
+}
+
 function testarJogo(cartas) {
 	cartas.sort(function(a, b) {return a.valor - b.valor});
 	var c1 = cartas[0];
 	var c2 = cartas[1];
 	var c3 = cartas[2];
-	
+
 	var ehTeste = testarAltas(c1,c2,c3);
 	var ehSeq = testarSequencia(c1, c2, c3);
-	//reordenar o jogo para o As ficar no lado correto
-	//tirar daqui, deve fazer isso apenas quando baixar o jogo
-	if(ehSeq && c1.valor === 1 && c3.valor === 13) {
-		cartas = [c2, c3, c1];
-	}
+
 	var ehTrinca = testarTrinca(c1, c2, c3);
 	if(ehSeq || ehTrinca || ehTeste) {
-		document.getElementById("btnBaixar").disabled = false; 
+		document.getElementById("btnBaixar").disabled = false;
 	}
 }
 
@@ -204,7 +282,7 @@ function testarSequencia(c1, c2, c3) {
 		(c1.valor === 1 && c2.valor === 12 && c3.valor === 13));
 	} else {
 		return false;
-	}	
+	}
 }
 
 function testarTrinca(c1, c2, c3) {
