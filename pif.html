@@ -11,6 +11,14 @@ button {
 </head>
 <body>
 <h1>Pif da Caixa</h1>
+<table width = "50%">
+<tr>
+	<td id="jogoOp1">JOGO 1 (Oponente)</br><button><h2>?</h2></button><button><h2>?</h2></button><button><h2>?</h2></button></td>
+	<td id="jogoOp2">JOGO 2 (Oponente)</br><button><h2>?</h2></button><button><h2>?</h2></button><button><h2>?</h2></button></td>
+	<td id="jogoOp3">JOGO 3 (Oponente)</br><button><h2>?</h2></button><button><h2>?</h2></button><button><h2>?</h2></button></td>
+</tr>
+</table>
+
 <table>
 	<tr>
 		<td colspan="3" id="mensagem"></td>
@@ -18,7 +26,7 @@ button {
 	<tr>
 		<td id="monte"><button id="btnMonte" onclick="compraPraMim(jogador, monte)"><h2>Monte: 104 cartas</h2></button></td>
 		<td id="lixo"><button id="btnLixo" onclick="compraPraMim(jogador, lixo)"><h2>Lixo: Vazio</h2></button></td>
-		<td id="descarte"><button id="btnDescarte" onclick="descartar(jogador, lixo)" disabled><h2>Descartar</h2></button></td>
+		<td id="descarte"><button id="btnDescarte" onclick="descartar(jogador)" disabled><h2>Descartar</h2></button></td>
 	</tr>
 	<tr>
 		<td colspan="2" id="maoDoJogador"></td>
@@ -44,7 +52,7 @@ button {
 var simbolos = ['&clubs;', '&diams;', '&spades;', '&hearts;'];
 var monte = criarMonte();
 var lixo = [];
-atualizarTela(monte, lixo);
+atualizarTela();
 var jogador = {nome: "Jogador", cartas: [], selecao: [], jogos: 0, comprou: false, descartou: false, adversario: null};
 var oponente = {nome: "Computador", cartas: [], selecao: [], jogos: 0, comprou: false, descartou: false, adversario: jogador};
 jogador.adversario = oponente;
@@ -56,7 +64,11 @@ for(var i = 0; i < 9; i++) {
 	}
 }
 
-comecarRodada(jogador);
+if(aleatorio(1, 2) === 1) {
+	comecarRodada(jogador);
+} else {
+	comecarRodada(oponente);
+}
 
 function mostra(carta)
 {
@@ -100,20 +112,23 @@ function compraDoLixo() {
 }
 
 function compraPraMim(qualJogador, baralho) {
-	console.log(qualJogador, baralho);
 	document.getElementById("mensagem").innerHTML = '<span style="color:red"><h2>Se tiver algum jogo de 3 cartas que queira baixar, pode fazê-lo.</br>Se não, pode descartar uma carta.</h2>';
-	qualJogador.cartas.push(compraDoMonte());
-	atualizarTela(monte, lixo);
+	if(baralho === monte) {
+		qualJogador.cartas.push(compraDoMonte());
+	} else {
+		qualJogador.cartas.push(compraDoLixo());
+	}
+	atualizarTela();
 	mostraMaoDoJogador();
 	qualJogador.comprou = true;
 	document.getElementById("btnMonte").disabled = true;
 	document.getElementById("btnLixo").disabled = true;
 }
 
-function descartar(qualJogador, lixo) {
+function descartar(qualJogador) {
 	var carta;
 	for(var i in qualJogador.cartas) {
-		//j� garantimos que essa funcao apenas � us�vel quando
+		//ja garantimos que essa funcao apenas eh usavel quando
 		//apenas uma carta foi selecionada
 		if(qualJogador.cartas[i].selecao) {
 			carta = (qualJogador.cartas[i]);
@@ -122,7 +137,7 @@ function descartar(qualJogador, lixo) {
 			lixo.push(carta);
 		}
 	}
-	atualizarTela(monte, lixo);
+	atualizarTela();
 	if(qualJogador === jogador)
 		mostraMaoDoJogador();
 	qualJogador.descartou = true;
@@ -131,7 +146,7 @@ function descartar(qualJogador, lixo) {
 }
 
 function comecarRodada(qualJogador) {
-	atualizarTela(monte, lixo);
+	atualizarTela();
 	qualJogador.comprou = false;
 	qualJogador.descartou = false;
 	document.getElementById("btnMonte").disabled = false;
@@ -150,23 +165,91 @@ function comecarRodada(qualJogador) {
 	if(qualJogador === jogador) {
 		document.getElementById("mensagem").innerHTML = '<span style="color:red"><h2>Compre uma carta do monte ou do lixo.</br>Também já pode baixar jogos de 3 cartas, se quiser.</h2>';
 		mostraMaoDoJogador();
+	} else {
+		rodadaDoComputador();
 	}
 }
 
 function rodadaDoComputador() {
-	//terminarRodada
+	compraPraMim(oponente, monte)
+	//testar a mao ao menos uma vez; repetir se encontrar um jogo
+	do {} while (testarMaoDoComputador());
+
+	avaliarCartas(oponente);
+	//reordena cartas por usabilidade na mao;
+	//cartas isoladas ficarao mal-avaliadas
+	oponente.cartas.sort(function(a, b) {return a.avaliacao - b.avaliacao});
+	oponente.cartas[0].selecao = true;
+	descartar(oponente);
+}
+
+function avaliarCartas(qualJogador) {
+	var c1, c2;
+	for(var a = 0; a < qualJogador.cartas.length; a++) {
+		qualJogador.cartas[a].avaliacao = 0;
+	}
+	for(var a = 0; a < qualJogador.cartas.length; a++) {
+		for(var b = a + 1; b < qualJogador.cartas.length; b++) {
+			c1 = qualJogador.cartas[a];
+			c2 = qualJogador.cartas[b];
+			if(c1.valor === c2.valor) {
+				if(c1.naipe !== c2.naipe) {
+					c1.avaliacao += 3;
+					c2.avaliacao += 3;
+				}
+				if(c1.naipe === c2.naipe) {
+					c1.avaliacao -= 5;
+					c2.avaliacao -= 5;
+				}
+			} else {
+				if(c1.naipe === c2.naipe && Math.abs(c1.valor - c2.valor) === 1) {
+					c1.avaliacao += 2;
+					c2.avaliacao += 2;
+				}
+				if(c1.naipe === c2.naipe && Math.abs(c1.valor - c2.valor) === 2) {
+					c1.avaliacao += 1;
+					c2.avaliacao += 1;
+				}
+			}
+		}
+	}
+}
+
+function testarMaoDoComputador() {
+	for(var a = 0; a < oponente.cartas.length; a++) {
+		for(var b = a + 1; b < oponente.cartas.length; b++) {
+			for(var c = b + 1; c < oponente.cartas.length; c++) {
+				if(testarTrinca(oponente.cartas[a], oponente.cartas[b], oponente.cartas[c]) ||
+				testarSequencia(oponente.cartas[a], oponente.cartas[b], oponente.cartas[c])){
+					oponente.cartas[a].selecao = true;
+					oponente.cartas[b].selecao = true;
+					oponente.cartas[c].selecao = true;
+					baixar(oponente);
+					return true;
+				}
+			}
+		}
+	}
+	return false;
 }
 
 function terminarRodada(qualJogador) {
-	console.log("minha vez");
-	//outro joga aqui
-	//comecarRodada(qualJogador.adversario);
-	comecarRodada(qualJogador);
+	if(qualJogador.cartas.length === 0) {
+		alert(qualJogador.nome + ' ganhou a partida!');
+		var botoes = document.getElementsByTagName("INPUT");
+		for (var i = 0; i < botoes.length; i++) {
+		    if (botoes[i].type === 'submit') {
+		        botoes[i].disabled = true;
+		    }
+		}
+		return;
+	}
+	comecarRodada(qualJogador.adversario);
 }
 
 function aleatorio(min, max)
 {
-	return Math.floor(Math.random() * (max - min) ) + min;
+	return Math.floor(Math.random() * (max - min + 1) ) + min;
 }
 
 function criarMonte() {
@@ -175,15 +258,15 @@ function criarMonte() {
 	{
 		for(var j = 0; j <= 3; j++)
 		{
-			monte.push({valor: i, naipe: j, selecao: false});
+			monte.push({valor: i, naipe: j, selecao: false, avaliacao: 0});
 			//dois baralhos
-			monte.push({valor: i, naipe: j, selecao: false});
+			monte.push({valor: i, naipe: j, selecao: false, avaliacao: 0});
 		}
 	}
 	return monte;
 }
 
-function atualizarTela(monte, lixo) {
+function atualizarTela() {
 	document.getElementById('btnMonte').innerHTML =
 	'<h2>Monte: ' + String(monte.length) + ' cartas</h2>';
 	if(lixo.length > 0) {
@@ -200,7 +283,7 @@ function mostraMaoDoJogador() {
 	for(var i in jogador.cartas)
 	{
 		var estilo = jogador.cartas[i].selecao === false ? "outset" : "inset";
-		saida += '<button id="cartaJ'+ i + '" onclick="selecionaCarta(jogador, this.id)" style="border-style: ' + estilo + ';" ><h2>'+mostra(jogador.cartas[i])+'</h2></button>';
+		saida += '<button id="cartaJ'+ i + '" onclick="selecionaCarta(this.id)" style="border-style: ' + estilo + ';" ><h2>'+mostra(jogador.cartas[i])+'</h2></button>';
 	}
 	document.getElementById('maoDoJogador').innerHTML = saida;
 }
@@ -213,7 +296,7 @@ function reordenarPorValor(qualJogador) {
 	qualJogador.cartas.sort(function(a, b) {return a.valor - b.valor});
 }
 
-function selecionaCarta(jogador, nomeDaCarta) {
+function selecionaCarta(nomeDaCarta) {
 	document.getElementById("btnBaixar").disabled = true;
 	var idCarta = Number(nomeDaCarta.slice(-1));
 
@@ -229,21 +312,18 @@ function selecionaCarta(jogador, nomeDaCarta) {
 		testarJogo(selecionadas);
 	}
 	var botaoDescarte = document.getElementById("btnDescarte");
-	//console.log(jogador);
 	if(selecionadas.length === 1 && jogador.comprou === true) {
 		botaoDescarte.disabled = false;
 	} else {
 		botaoDescarte.disabled = true;
 	}
-	//for(var i in selecionadas)
-	//	console.log(selecionadas[i]);
 }
 
-function cartasSelecionadas(jogador) {
+function cartasSelecionadas(qualJogador) {
 	var selecionadas = [];
-	for(var i in jogador.cartas) {
-		if(jogador.cartas[i].selecao)
-			selecionadas.push(jogador.cartas[i]);
+	for(var i in qualJogador.cartas) {
+		if(qualJogador.cartas[i].selecao)
+			selecionadas.push(qualJogador.cartas[i]);
 	}
 	return selecionadas;
 }
@@ -252,10 +332,8 @@ function baixar(qualJogador) {
 	qualJogador.jogos++;
 	var esteJogo = [];
 	for(var i = 0; i < qualJogador.cartas.length; i++) {
-		console.log(i);
 		if(qualJogador.cartas[i].selecao) {
 			var carta = qualJogador.cartas[i]
-			console.log(carta);
 			carta.selecao = false;
 			qualJogador.cartas.splice(i, 1);
 			i--; //carta atual foi excluida, proxima tera mesmo indice
@@ -278,6 +356,12 @@ function baixar(qualJogador) {
 		document.getElementById("jogo" + qualJogador.jogos).innerHTML = saida;
 		mostraMaoDoJogador();
 		document.getElementById("btnBaixar").disabled = true;
+	} else {
+		var saida = 'JOGO ' + qualJogador.jogos + ' (Oponente)</br>';
+		for(var i in esteJogo) {
+			saida += '<button><h2>'+mostra(esteJogo[i])+'</h2></button>';
+		}
+		document.getElementById("jogoOp" + qualJogador.jogos).innerHTML = saida;
 	}
 }
 
