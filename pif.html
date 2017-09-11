@@ -49,6 +49,7 @@ button {
 </table>
 <script>
 "use strict";
+
 var simbolos = ['&clubs;', '&diams;', '&spades;', '&hearts;'];
 var monte = criarMonte();
 var lixo = [];
@@ -69,6 +70,7 @@ if(aleatorio(1, 2) === 1) {
 } else {
 	comecarRodada(oponente);
 }
+
 
 function mostra(carta)
 {
@@ -133,6 +135,7 @@ function descartar(qualJogador) {
 		if(qualJogador.cartas[i].selecao) {
 			carta = (qualJogador.cartas[i]);
 			carta.selecao = false;
+			carta.avaliacao = 0;
 			qualJogador.cartas.splice(i, 1);
 			lixo.push(carta);
 		}
@@ -171,7 +174,17 @@ function comecarRodada(qualJogador) {
 }
 
 function rodadaDoComputador() {
-	compraPraMim(oponente, monte)
+	avaliarCartas(oponente);
+	if(lixo.length > 0) {
+		var valorDoLixo = avaliarLixo(oponente, lixo[lixo.length - 1]);
+		oponente.cartas.sort(function(a, b) {return a.avaliacao - b.avaliacao});
+		if (valorDoLixo > oponente.cartas[0].avaliacao) {
+			compraPraMim(oponente, lixo);
+		}
+	}
+	if(!oponente.comprou) {
+		compraPraMim(oponente, monte)
+	}
 	//testar a mao ao menos uma vez; repetir se encontrar um jogo
 	do {} while (testarMaoDoComputador());
 
@@ -181,6 +194,41 @@ function rodadaDoComputador() {
 	oponente.cartas.sort(function(a, b) {return a.avaliacao - b.avaliacao});
 	oponente.cartas[0].selecao = true;
 	descartar(oponente);
+}
+
+function avaliarLixo(qualJogador, cartaDoLixo) {
+	var avaliacao = 0;
+	for(var a = 0; a < qualJogador.cartas.length; a++) {
+		var c1 = qualJogador.cartas[a];
+		for(var b = a + 1;  b < qualJogador.cartas.length; b++) {
+			var c2 = qualJogador.cartas[b];
+			if(testarTrinca(cartaDoLixo, c1, c2) ||
+			testarSequencia(cartaDoLixo, c1, c2)) {
+				avaliacao += 100;
+			}
+		}
+		if(cartaDoLixo.valor === c1.valor) {
+			if(cartaDoLixo.naipe !== c1.naipe) {
+				avaliacao += 3;
+				c1.avaliacao += 3;
+			} else {
+				avaliacao -= 5;
+				c1.avaliacao -= 5;
+			}
+		} else {
+			if(cartaDoLixo.naipe === c1.naipe && Math.abs(cartaDoLixo.valor - c1.valor) === 1) {
+				avaliacao += 2;
+				c1.avaliacao += 2;
+			}
+			if(cartaDoLixo.naipe === c1.naipe && Math.abs(cartaDoLixo.valor - c1.valor) === 2) {
+				avaliacao += 1;
+				c1.avaliacao += 1;
+			}
+		}
+	}
+	//-2 para tratar a avaliacao da carta do lixo como ligeiramente
+	//indesejavel, ja que o monte pode ter cartas melhores
+	return avaliacao - 2;
 }
 
 function avaliarCartas(qualJogador) {
@@ -196,8 +244,7 @@ function avaliarCartas(qualJogador) {
 				if(c1.naipe !== c2.naipe) {
 					c1.avaliacao += 3;
 					c2.avaliacao += 3;
-				}
-				if(c1.naipe === c2.naipe) {
+				} else {
 					c1.avaliacao -= 5;
 					c2.avaliacao -= 5;
 				}
